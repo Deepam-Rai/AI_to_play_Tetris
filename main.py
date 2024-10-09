@@ -18,8 +18,7 @@ if __name__ == "__main__":
 
     game = Tetris()
     # pygame loop
-    game_over = False
-    while not game_over:
+    while game.game_state != GameState.GAME_OVER:
         direction = None
         rotate = False
         game.frame_iteration += 1
@@ -34,6 +33,8 @@ if __name__ == "__main__":
                     direction = Direction.LEFT
                 elif event.key == pygame.K_RIGHT:
                     direction = Direction.RIGHT
+                elif event.key == pygame.K_DOWN:
+                    direction = Direction.DOWN
                 elif event.key == pygame.K_UP:
                     rotate = True
         game.update(direction, rotate)
@@ -41,4 +42,4 @@ if __name__ == "__main__":
         game.update_ui()
         # frame rate
         game.clock.tick(SPEED)
-    print(f"Game Over!")
+    input(f"Game Over!")

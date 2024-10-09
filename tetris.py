@@ -8,8 +8,11 @@ class Tetris:
     def __init__(self):
         self.score: int = 0
         self.max_height: int = 0
+        self.game_state = GameState.PLAYING
         self.board: List[List] = [[None]*BOARD_LENGTH for _ in range(BOARD_HEIGHT)]
         pygame.init()
+        logo = pygame.image.load('assets/logo.png')
+        pygame.display.set_icon(logo)
         self.font = pygame.font.Font('assets/fonts/arial.ttf', 25)
         self.length_pix: int = BOARD_LENGTH * BLOCK_SIZE + 8*BLOCK_SIZE
         self.height_pix: int = BOARD_HEIGHT*BLOCK_SIZE
@@ -17,8 +20,6 @@ class Tetris:
         pygame.display.set_caption('Tetris')
         self.clock = pygame.time.Clock()
         self.frame_iteration: int = 0
-        logo = pygame.image.load('assets/logo.png')
-        pygame.display.set_icon(logo)
         self.new_tetromino: Tetromino = None
         # colors
         self.bg_color = Color.WHITE.value
@@ -29,6 +30,7 @@ class Tetris:
     def reset(self) -> None:
         self.score = 0
         self.max_height = 0
+        self.game_state = GameState.PLAYING
         self.board = [[None] * BOARD_LENGTH for _ in range(BOARD_HEIGHT)]
         self.frame_iteration = 0
         self.new_tetromino = None
@@ -44,6 +46,8 @@ class Tetris:
             self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1]-1)
             self.engrave_to_board(self.new_tetromino)
             self.new_tetromino = self.spawn_tetromino()
+            if self.collision(self.new_tetromino):
+                self.game_state = GameState.GAME_OVER
         if rotate:
             self.new_tetromino.rotate()
             if self.collision(self.new_tetromino):
@@ -56,6 +60,17 @@ class Tetris:
             self.new_tetromino.pos = (self.new_tetromino.pos[0]-1, self.new_tetromino.pos[1])
             if self.collision(self.new_tetromino):
                 self.new_tetromino.pos = (self.new_tetromino.pos[0]+1, self.new_tetromino.pos[1])
+        if direction == Direction.DOWN:
+            while True:
+                self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1] + 1)
+                if self.collision(self.new_tetromino):
+                    self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1] - 1)
+                    break
+            self.engrave_to_board(self.new_tetromino)
+            self.new_tetromino = self.spawn_tetromino()
+            if self.collision(self.new_tetromino):
+                self.game_state = GameState.GAME_OVER
+
 
     def collision(self, tetromino: Tetromino) -> bool:
         size = len(tetromino.shape)
@@ -64,6 +79,8 @@ class Tetris:
         for i in range(size):
             for j in range(size):
                 if tetromino.shape[i][j] == 1:
+                    if y+j < 0:
+                        self.state = GameState.GAME_OVER
                     if y+j >= BOARD_HEIGHT or x+i < 0 or x+i >= BOARD_LENGTH:
                         return True
                     if self.board[y+j][x+i] is not None:
