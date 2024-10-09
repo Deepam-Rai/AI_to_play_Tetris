@@ -56,13 +56,24 @@ class Tetromino:
         """
         self.shape = list(map(list, zip(*self.shape[::-1])))
 
+    def opp_rotate(self) -> None:
+        self.shape = list(map(list, zip(*[row[::-1] for row in self.shape])))
+
 
 def random_tetromino(pos: Tuple) -> Tetromino:
     return Tetromino(random.choice(list(TetrominoType)), pos)
 
 
 if __name__ == "__main__":
+    def show(tetromino):
+        print()
+        for row in tetromino.shape:
+            for block in row:
+                print(block, end="")
+            print()
     t = random_tetromino((0,0))
-    print(t.shape)
+    show(t)
     t.rotate()
-    print(t.shape)
+    show(t)
+    t.opp_rotate()
+    show(t)

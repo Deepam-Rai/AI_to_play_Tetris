@@ -40,6 +40,44 @@ class Tetris:
         if self.new_tetromino is None:
             self.new_tetromino = self.spawn_tetromino()
         self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1]+1)
+        if self.collision(self.new_tetromino):
+            self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1]-1)
+            self.engrave_to_board(self.new_tetromino)
+            self.new_tetromino = self.spawn_tetromino()
+        if rotate:
+            self.new_tetromino.rotate()
+            if self.collision(self.new_tetromino):
+                self.new_tetromino.opp_rotate()
+        if direction == Direction.RIGHT:
+            self.new_tetromino.pos = (self.new_tetromino.pos[0]+1, self.new_tetromino.pos[1])
+            if self.collision(self.new_tetromino):
+                self.new_tetromino.pos = (self.new_tetromino.pos[0]-1, self.new_tetromino.pos[1])
+        if direction == Direction.LEFT:
+            self.new_tetromino.pos = (self.new_tetromino.pos[0]-1, self.new_tetromino.pos[1])
+            if self.collision(self.new_tetromino):
+                self.new_tetromino.pos = (self.new_tetromino.pos[0]+1, self.new_tetromino.pos[1])
+
+    def collision(self, tetromino: Tetromino) -> bool:
+        size = len(tetromino.shape)
+        x = tetromino.pos[0]
+        y = tetromino.pos[1]
+        for i in range(size):
+            for j in range(size):
+                if tetromino.shape[i][j] == 1:
+                    if y+j >= BOARD_HEIGHT or x+i < 0 or x+i >= BOARD_LENGTH:
+                        return True
+                    if self.board[y+j][x+i] is not None:
+                        return True
+        return False
+
+    def engrave_to_board(self, tetromino):
+        size = len(tetromino.shape)
+        x = tetromino.pos[0]
+        y = tetromino.pos[1]
+        for i in range(size):
+            for j in range(size):
+                if tetromino.shape[i][j] == 1:
+                    self.board[y+j][x+i] = tetromino.color
 
     def update_ui(self) -> None:
         # clear the screen
@@ -51,11 +89,12 @@ class Tetris:
         self.draw_board()
         # draw new tetromino
         new_t = self.new_tetromino
-        size = len(new_t.shape)
-        for i in range(size):
-            for j in range(size):
-                if new_t.shape[i][j] == 1:
-                    self.draw_block(x=(new_t.pos[0] + i)*BLOCK_SIZE, y=(new_t.pos[1] + j)*BLOCK_SIZE, color=new_t.color)
+        if new_t is not None:
+            size = len(new_t.shape)
+            for i in range(size):
+                for j in range(size):
+                    if new_t.shape[i][j] == 1:
+                        self.draw_block(x=BOARD_BORDER_OFFSET + (new_t.pos[0] + i)*BLOCK_SIZE, y=(new_t.pos[1] + j)*BLOCK_SIZE, color=new_t.color)
         # score
         text = self.font.render(f'Score', True, self.score_color)
         self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, BLOCK_SIZE*2))
@@ -69,7 +108,7 @@ class Tetris:
             for j in range(BOARD_LENGTH):
                 color = self.board[i][j]
                 if color is not None:
-                    self.draw_block(i*BLOCK_SIZE, j*BLOCK_SIZE, color)
+                    self.draw_block(x=BOARD_BORDER_OFFSET + j*BLOCK_SIZE, y=i*BLOCK_SIZE, color=color)
 
     def draw_block(self, x, y, color):
         border_size = 1
