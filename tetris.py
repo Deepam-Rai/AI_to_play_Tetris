@@ -7,14 +7,17 @@ from tetrominoes import Tetromino, random_tetromino
 class Tetris:
     def __init__(self):
         self.score: int = 0
-        self.max_height: int = 0
+        self.lines_cleared: int = 0
+        self.consecutive: int = 0
         self.game_state = GameState.PLAYING
+        self.level = 1
+        self.speed = self.level * BASE_SPEED
         self.board: List[List] = [[None]*BOARD_LENGTH for _ in range(BOARD_HEIGHT)]
         pygame.init()
         logo = pygame.image.load('assets/logo.png')
         pygame.display.set_icon(logo)
-        self.font = pygame.font.Font('assets/fonts/arial.ttf', 25)
-        self.length_pix: int = BOARD_LENGTH * BLOCK_SIZE + 8*BLOCK_SIZE
+        self.font = pygame.font.Font('assets/fonts/ka1.ttf', size=17)
+        self.length_pix: int = BOARD_LENGTH * BLOCK_SIZE + 10*BLOCK_SIZE
         self.height_pix: int = BOARD_HEIGHT*BLOCK_SIZE
         self.display = pygame.display.set_mode((self.length_pix, self.height_pix))
         pygame.display.set_caption('Tetris')
@@ -29,8 +32,11 @@ class Tetris:
 
     def reset(self) -> None:
         self.score = 0
-        self.max_height = 0
+        self.lines_cleared: int = 0
+        self.consecutive = 0
         self.game_state = GameState.PLAYING
+        self.level = 1
+        self.speed = self.level * BASE_SPEED
         self.board = [[None] * BOARD_LENGTH for _ in range(BOARD_HEIGHT)]
         self.frame_iteration = 0
         self.new_tetromino = None
@@ -70,7 +76,9 @@ class Tetris:
             self.new_tetromino = self.spawn_tetromino()
             if self.collision(self.new_tetromino):
                 self.game_state = GameState.GAME_OVER
-
+        self.check_board()
+        self.level = self.lines_cleared//10 + 1
+        self.speed = self.level*BASE_SPEED
 
     def collision(self, tetromino: Tetromino) -> bool:
         size = len(tetromino.shape)
@@ -80,7 +88,8 @@ class Tetris:
             for j in range(size):
                 if tetromino.shape[i][j] == 1:
                     if y+j < 0:
-                        self.state = GameState.GAME_OVER
+                        self.game_state = GameState.GAME_OVER
+                        return True
                     if y+j >= BOARD_HEIGHT or x+i < 0 or x+i >= BOARD_LENGTH:
                         return True
                     if self.board[y+j][x+i] is not None:
@@ -96,6 +105,32 @@ class Tetris:
                 if tetromino.shape[i][j] == 1:
                     self.board[y+j][x+i] = tetromino.color
 
+    def check_board(self) -> None:
+        """
+        Check line clears and award score.
+        :return:
+        """
+        cleared_lines = []
+        for row in range(BOARD_HEIGHT):
+            filled = True
+            for block in self.board[row]:
+                if block is None:
+                    filled = False
+                    break
+            if filled:
+                cleared_lines.append(row)
+                self.board.pop(row)
+                self.board = [[None]*BOARD_LENGTH] + self.board
+        count = len(cleared_lines)
+        if count > 0:
+            self.lines_cleared += count
+            self.score += pow(2, count-1)*100
+            self.score += self.consecutive
+            self.consecutive = self.consecutive*2 + 50
+        else:
+            self.consecutive = 0
+
+
     def update_ui(self) -> None:
         # clear the screen
         self.display.fill(self.bg_color)
@@ -106,17 +141,18 @@ class Tetris:
         self.draw_board()
         # draw new tetromino
         new_t = self.new_tetromino
-        if new_t is not None:
-            size = len(new_t.shape)
-            for i in range(size):
-                for j in range(size):
-                    if new_t.shape[i][j] == 1:
-                        self.draw_block(x=BOARD_BORDER_OFFSET + (new_t.pos[0] + i)*BLOCK_SIZE, y=(new_t.pos[1] + j)*BLOCK_SIZE, color=new_t.color)
+        size = len(new_t.shape)
+        for i in range(size):
+            for j in range(size):
+                if new_t.shape[i][j] == 1:
+                    self.draw_block(x=BOARD_BORDER_OFFSET + (new_t.pos[0] + i)*BLOCK_SIZE, y=(new_t.pos[1] + j)*BLOCK_SIZE, color=new_t.color)
         # score
+        text = self.font.render(f'Level : {self.level}', True, self.score_color)
+        self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, int(BLOCK_SIZE/2)))
         text = self.font.render(f'Score', True, self.score_color)
-        self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, BLOCK_SIZE*2))
+        self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, BLOCK_SIZE*3))
         text = self.font.render(f'{self.score}', True, self.score_color)
-        self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, BLOCK_SIZE*4))
+        self.display.blit(text, ((BOARD_LENGTH+2)*BLOCK_SIZE, int(BLOCK_SIZE*4)))
         # update the window
         pygame.display.flip()
 
