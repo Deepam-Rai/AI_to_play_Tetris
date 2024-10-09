@@ -1,10 +1,8 @@
 import argparse
 import os
-
-from tetris import Tetris
-
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
+from tetris import Tetris
 from constants import *
 
 parser = argparse.ArgumentParser("arg_parser")
@@ -38,6 +36,7 @@ if __name__ == "__main__":
                     direction = Direction.RIGHT
                 elif event.key == pygame.K_UP:
                     rotate = True
+        game.update(direction, rotate)
         # update UI
         game.update_ui()
         # frame rate

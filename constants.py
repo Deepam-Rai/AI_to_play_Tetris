@@ -18,7 +18,7 @@ class Direction(Enum):
 
 # dimensions
 BLOCK_SIZE = 20
-SPEED = 100
+SPEED = 5
 BOARD_HEIGHT = 35
 BOARD_LENGTH = 20
 
