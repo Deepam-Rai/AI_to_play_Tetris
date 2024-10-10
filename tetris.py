@@ -23,7 +23,7 @@ class Tetris:
         pygame.display.set_caption('Tetris')
         self.clock = pygame.time.Clock()
         self.frame_iteration: int = 0
-        self.new_tetromino: Tetromino = None
+        self.new_tetromino: Tetromino = self.spawn_tetromino()
         # colors
         self.bg_color = Color.WHITE.value
         self.score_color = Color.BLACK.value
@@ -39,12 +39,12 @@ class Tetris:
         self.speed = self.level * BASE_SPEED
         self.board = [[None] * BOARD_LENGTH for _ in range(BOARD_HEIGHT)]
         self.frame_iteration = 0
-        self.new_tetromino = None
+        self.new_tetromino = self.spawn_tetromino()
 
     def spawn_tetromino(self) -> Tetromino:
         return random_tetromino((int(BOARD_LENGTH/2), 0))
 
-    def update(self, direction, rotate):
+    def update(self, direction, rotate) -> List:
         if self.new_tetromino is None:
             self.new_tetromino = self.spawn_tetromino()
         self.new_tetromino.pos = (self.new_tetromino.pos[0], self.new_tetromino.pos[1]+1)
@@ -76,9 +76,10 @@ class Tetris:
             self.new_tetromino = self.spawn_tetromino()
             if self.collision(self.new_tetromino):
                 self.game_state = GameState.GAME_OVER
-        self.check_board()
+        score = self.check_board()
         self.level = self.lines_cleared//10 + 1
         self.speed = self.level*BASE_SPEED
+        return [score]
 
     def collision(self, tetromino: Tetromino) -> bool:
         size = len(tetromino.shape)
@@ -105,11 +106,12 @@ class Tetris:
                 if tetromino.shape[i][j] == 1:
                     self.board[y+j][x+i] = tetromino.color
 
-    def check_board(self) -> None:
+    def check_board(self) -> int:
         """
         Check line clears and award score.
-        :return:
+        :return: Score gained
         """
+        score = 0
         cleared_lines = []
         for row in range(BOARD_HEIGHT):
             filled = True
@@ -124,12 +126,13 @@ class Tetris:
         count = len(cleared_lines)
         if count > 0:
             self.lines_cleared += count
-            self.score += pow(2, count-1)*100
-            self.score += self.consecutive
+            score = pow(2, count-1)*100
+            score += self.consecutive
+            self.score += score
             self.consecutive = self.consecutive*2 + 50
         else:
             self.consecutive = 0
-
+        return score
 
     def update_ui(self) -> None:
         # clear the screen

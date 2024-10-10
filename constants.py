@@ -8,6 +8,10 @@ VALID_PLAYERS = [
     USER
 ]
 
+# parameters
+MAX_MEMORY = 100_000
+BATCH_SIZE = 1000
+
 
 class Direction(Enum):
     UP = 0
